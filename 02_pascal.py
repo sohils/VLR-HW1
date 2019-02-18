@@ -8,7 +8,9 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
+import time
 
 import util
 import matplotlib.pyplot as plt
