@@ -57,6 +57,16 @@ class SimpleCNN(keras.Model):
         shape = [shape[0], self.num_classes]
         return tf.TensorShape(shape)
 
+def test(model, dataset):
+    test_loss = tfe.metrics.Mean()
+    test_accuracy = tfe.metrics.Accuracy()
+    for batch, (images, labels) in enumerate(dataset):
+        logits = model(images)
+        loss_value = tf.losses.sigmoid_cross_entropy(labels, logits)
+        prediction = logits
+        test_accuracy(prediction, labels)
+        test_loss(loss_value)
+    return test_loss.result(), test_accuracy.result()
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
@@ -125,7 +135,7 @@ def main():
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
-            epoch_accuracy(predictions = model(images),labels=labels)
+            epoch_accuracy(predictions=model(images),labels=labels)
             if global_step.numpy() % args.log_interval == 0:
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
                       'Training Accuracy:{4:.4f}'.format(ep,
