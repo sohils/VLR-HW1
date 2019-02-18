@@ -82,9 +82,9 @@ def main():
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
                                                                  split='sohil-test')
-    # test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
-                                                            #   class_names=CLASS_NAMES,
-                                                            #   split='test')
+    test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
+                                                              class_names=CLASS_NAMES,
+                                                              split='test')
 
     ## TODO modify the following code to apply data augmentation here
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
@@ -106,19 +106,71 @@ def main():
     writer.set_as_default()
 
     ## TODO write the training and testing code for multi-label classification
-    
+    global_step = tf.train.get_or_create_global_step()
+    optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
+    train_log = {'iter': [], 'loss': [], 'accuracy': []}
+    test_log = {'iter': [], 'loss': [], 'accuracy': []}
+    for ep in range(args.epochs):
+        epoch_loss_avg = tfe.metrics.Mean()
+        epoch_accuracy = tfe.metrics.Accuracy()
+        for batch, (images, labels) in enumerate(train_dataset):
+            loss_value, grads = util.cal_grad(model,
+                                              loss_func=tf.losses.sparse_softmax_cross_entropy,
+                                              inputs=images,
+                                              targets=labels)
+            optimizer.apply_gradients(zip(grads,
+                                          model.trainable_variables),
+                                      global_step)
+            epoch_loss_avg(loss_value)
+            epoch_accuracy(tf.argmax(model(images),
+                                     axis=1,
+                                     output_type=tf.int32),
+                           labels)
+            if global_step.numpy() % args.log_interval == 0:
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
+                      'Training Accuracy:{4:.4f}'.format(ep,
+                                                         args.epochs,
+                                                         global_step.numpy(),
+                                                         epoch_loss_avg.result(),
+                                                         epoch_accuracy.result()))
+                train_log['iter'].append(global_step.numpy())
+                train_log['loss'].append(epoch_loss_avg.result())
+                train_log['accuracy'].append(epoch_accuracy.result())
+            if global_step.numpy() % args.eval_interval == 0:
+                test_loss, test_acc = test(model, test_dataset)
+                test_log['iter'].append(global_step.numpy())
+                test_log['loss'].append(test_loss)
+                test_log['accuracy'].append(test_acc)
 
-    AP, mAP = util.eval_dataset_map(model, test_dataset)
-    rand_AP = util.compute_ap(
-        test_labels, np.random.random(test_labels.shape),
-        test_weights, average=None)
-    print('Random AP: {} mAP'.format(np.mean(rand_AP)))
-    gt_AP = util.compute_ap(test_labels, test_labels, test_weights, average=None)
-    print('GT AP: {} mAP'.format(np.mean(gt_AP)))
-    print('Obtained {} mAP'.format(mAP))
-    print('Per class:')
-    for cid, cname in enumerate(CLASS_NAMES):
-        print('{}: {}'.format(cname, util.get_el(AP, cid)))
+    model.summary()
+    end_time = time.time()
+    print('Elapsed time: {0:.3f}s'.format(end_time - start_time))
+    predict(model, test_images[:5], class_names)
+    fig = plt.figure()
+    plt.plot(train_log['iter'], train_log['loss'], 'r', label='Training')
+    plt.plot(test_log['iter'], test_log['loss'], 'b', label='Testing')
+    plt.title('Loss')
+    plt.legend()
+    fig = plt.figure()
+    plt.plot(train_log['iter'], train_log['accuracy'], 'r', label='Training')
+    plt.plot(test_log['iter'], test_log['accuracy'], 'b', label='Testing')
+    plt.title('Accuracy')
+    plt.legend()
+    plt.show()
+
+
+
+    # AP, mAP = util.eval_dataset_map(model, test_dataset)
+    # rand_AP = util.compute_ap(
+    #     test_labels, np.random.random(test_labels.shape),
+    #     test_weights, average=None)
+    # print('Random AP: {} mAP'.format(np.mean(rand_AP)))
+    # gt_AP = util.compute_ap(test_labels, test_labels, test_weights, average=None)
+    # print('GT AP: {} mAP'.format(np.mean(gt_AP)))
+    # print('Obtained {} mAP'.format(mAP))
+    # print('Per class:')
+    # for cid, cname in enumerate(CLASS_NAMES):
+    #     print('{}: {}'.format(cname, util.get_el(AP, cid)))
 
 
 if __name__ == '__main__':
