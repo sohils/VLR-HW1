@@ -11,6 +11,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 import util
+import matplotlib.pyplot as plt
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -81,7 +82,7 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='sohil-test')
+                                                                 split='trainval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
                                                               split='test')
@@ -151,12 +152,14 @@ def main():
     plt.plot(test_log['iter'], test_log['loss'], 'b', label='Testing')
     plt.title('Loss')
     plt.legend()
+    plt.savefig("results/02_loss.png")
     fig = plt.figure()
     plt.plot(train_log['iter'], train_log['accuracy'], 'r', label='Training')
     plt.plot(test_log['iter'], test_log['accuracy'], 'b', label='Testing')
     plt.title('Accuracy')
     plt.legend()
-    plt.show()
+    plt.savefig("results/02_accuracy.png")
+    # plt.show()
 
 
 
