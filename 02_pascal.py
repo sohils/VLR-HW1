@@ -73,7 +73,7 @@ def main():
                              ' evaluate the model')
     parser.add_argument('--log-dir', type=str, default='tb',
                         help='path for logging directory')
-    parser.add_argument('--data-dir', type=str, default='./VOCdevkit/VOC2007',
+    parser.add_argument('--data-dir', type=str, default='./data/VOCdevkit/VOC2007/',
                         help='Path to PASCAL data storage')
     args = parser.parse_args()
     util.set_random_seed(args.seed)
@@ -81,19 +81,22 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='trainval')
-    test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
-                                                              class_names=CLASS_NAMES,
-                                                              split='test')
+                                                                 split='sohil-test')
+    # test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
+                                                            #   class_names=CLASS_NAMES,
+                                                            #   split='test')
 
     ## TODO modify the following code to apply data augmentation here
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
+    train_dataset = train_dataset.map(lambda x,y,z: util.data_augmentation(x,y,z,args.seed))
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
+    test_dataset = test_dataset.map(lambda x,y,z: util.data_augmentation(x,y,z,args.seed))
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
+    # Logging block
     logdir = os.path.join(args.log_dir,
                           datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(logdir):
@@ -103,6 +106,7 @@ def main():
     writer.set_as_default()
 
     ## TODO write the training and testing code for multi-label classification
+    
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     rand_AP = util.compute_ap(

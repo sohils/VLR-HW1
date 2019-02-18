@@ -1,8 +1,9 @@
 import numpy as np
 import sklearn.metrics
-import tensorflow as tf
 from tensorflow import keras
-
+from PIL import Image
+import xml.etree.ElementTree as xmletree
+import tensorflow as tf
 
 def set_session():
     config = tf.ConfigProto()
@@ -37,6 +38,29 @@ def load_pascal(data_dir, class_names, split='train'):
             are ambiguous.
     """
     ## TODO Implement this function
+    images = []
+    labels = []
+    weights = []
+
+    with open(data_dir+"ImageSets/Main/"+split+".txt") as fp:
+        lines = [line.strip() for line in fp.readlines()]
+
+    for line in lines:
+        label = np.zeros((len(class_names)))
+        weight = np.ones((len(class_names)))
+        # img = keras.preprocessing.image.load_img(data_dir+"ImageSets/"+line.strip()+".jpg")
+        img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
+        images.append(img)
+        e = xmletree.parse(data_dir+"Annotations/"+line.strip()+".xml").getroot()
+        for obj in e.findall('object'):
+            tag = class_names.index(obj.find('name').text)
+            label[tag]=1
+        labels.append(label)
+        weights.append(weight)
+
+    images = np.asarray(images)
+    labels = np.asarray(labels)
+    weights = np.asarray(weights)
     return images, labels, weights
 
 
@@ -105,3 +129,10 @@ def get_el(arr, i):
         return arr[i]
     except IndexError:
         return arr
+
+def data_augmentation(images, labels, weights, seed):
+    images = tf.image.random_flip_left_right(images,seed=seed)
+    images = tf.image.random_flip_up_down(images,seed=seed)
+    images = tf.image.random_crop(images, images.shape)
+    images = tf.image.random_brightness(images, max_delta=0.75)
+    return (images, labels, weights)
