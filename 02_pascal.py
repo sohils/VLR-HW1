@@ -84,10 +84,10 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='trainval')
+                                                                 split='sohil-test')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
-                                                              split='test')
+                                                              split='sohil-test')
 
     ## TODO modify the following code to apply data augmentation here
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
@@ -116,19 +116,16 @@ def main():
     for ep in range(args.epochs):
         epoch_loss_avg = tfe.metrics.Mean()
         epoch_accuracy = tfe.metrics.Accuracy()
-        for batch, (images, labels) in enumerate(train_dataset):
+        for batch, (images, labels, weights) in enumerate(train_dataset):
             loss_value, grads = util.cal_grad(model,
-                                              loss_func=tf.losses.sparse_softmax_cross_entropy,
+                                              loss_func=tf.losses.sigmoid_cross_entropy,
                                               inputs=images,
                                               targets=labels)
             optimizer.apply_gradients(zip(grads,
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
-            epoch_accuracy(tf.argmax(model(images),
-                                     axis=1,
-                                     output_type=tf.int32),
-                           labels)
+            epoch_accuracy(predictions = model(images),labels=labels)
             if global_step.numpy() % args.log_interval == 0:
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
                       'Training Accuracy:{4:.4f}'.format(ep,

@@ -46,10 +46,11 @@ def load_pascal(data_dir, class_names, split='train'):
         lines = [line.strip() for line in fp.readlines()]
 
     for line in lines:
-        label = np.zeros((len(class_names)))
+        label = np.zeros((len(class_names)),dtype='float32')
         weight = np.ones((len(class_names)))
         # img = keras.preprocessing.image.load_img(data_dir+"ImageSets/"+line.strip()+".jpg")
         img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
+        img = img.astype('float32')/255.0
         images.append(img)
         e = xmletree.parse(data_dir+"Annotations/"+line.strip()+".xml").getroot()
         for obj in e.findall('object'):
