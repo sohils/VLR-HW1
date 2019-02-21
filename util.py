@@ -42,26 +42,33 @@ def load_pascal(data_dir, class_names, split='train'):
     labels = []
     weights = []
 
-    with open(data_dir+"ImageSets/Main/"+split+".txt") as fp:
-        lines = [line.strip() for line in fp.readlines()]
-
+    filename = data_dir+"ImageSets/Main/"+split+".txt"
+    with open(filename) as fp:
+            lines = [line.strip() for line in fp.readlines()]
     for line in lines:
-        label = np.zeros((len(class_names)),dtype='float32')
-        weight = np.ones((len(class_names)))
-        # img = keras.preprocessing.image.load_img(data_dir+"ImageSets/"+line.strip()+".jpg")
         img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
-        img = img.astype('float32')/255.0
         images.append(img)
-        e = xmletree.parse(data_dir+"Annotations/"+line.strip()+".xml").getroot()
-        for obj in e.findall('object'):
-            tag = class_names.index(obj.find('name').text)
-            label[tag]=1
-        labels.append(label)
-        weights.append(weight)
 
     images = np.asarray(images)
-    labels = np.asarray(labels)
-    weights = np.asarray(weights)
+    labels = np.zeros((images.shape[0],len(class_names)))
+    weights = np.zeros((images.shape[0],len(class_names)))
+
+    for index, class_name in enumerate(class_names):
+        filename = data_dir+"ImageSets/Main/"+class_name+"_"+split+".txt"
+        with open(filename) as fp:
+            lines = [line.strip() for line in fp.readlines()]
+        for image_index,line in enumerate(lines):
+            words = line.split(' ')
+            if( words[1] == '1'):
+                labels[image_index,index] = 1
+                weights[image_index,index] = 1
+            elif( words[1] == '0'):
+                labels[image_index,index] = 1
+                weights[image_index,index] = 0
+            elif( words[1] == '-1'):
+                labels[image_index,index] = 0
+                weights[image_index,index] = 1
+
     return images, labels, weights
 
 
@@ -122,6 +129,9 @@ def eval_dataset_map(model, dataset):
          MAP (float): mean average precision
     """
     ## TODO implement the code here
+    logits = model(inputs)
+    
+    # AP = compute_ap(gt=dataset.,pred=logits)
     return AP, mAP
 
 
@@ -137,3 +147,28 @@ def data_augmentation(images, labels, weights, seed):
     images = tf.image.random_crop(images, images.shape)
     images = tf.image.random_brightness(images, max_delta=0.75)
     return (images, labels, weights)
+
+
+
+
+# Incorrect Excess Code
+    # with open(data_dir+"ImageSets/Main/"+split+".txt") as fp:
+    #     lines = [line.strip() for line in fp.readlines()]
+
+    # for line in lines:
+    #     label = np.zeros((len(class_names)),dtype='float32')
+    #     weight = np.ones((len(class_names)))
+    #     # img = keras.preprocessing.image.load_img(data_dir+"ImageSets/"+line.strip()+".jpg")
+    #     img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
+    #     img = img.astype('float32')/255.0
+    #     images.append(img)
+    #     e = xmletree.parse(data_dir+"Annotations/"+line.strip()+".xml").getroot()
+    #     for obj in e.findall('object'):
+    #         tag = class_names.index(obj.find('name').text)
+    #         label[tag]=1
+    #     labels.append(label)
+    #     weights.append(weight)
+
+    # images = np.asarray(images)
+    # labels = np.asarray(labels)
+    # weights = np.asarray(weights)
