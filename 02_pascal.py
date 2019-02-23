@@ -71,7 +71,7 @@ def test(model, dataset):
     return test_loss.result(), mAP
 
 def logging_variable(name, value):
-    with tf.contrib.summary.always_record_summaries:
+    with tf.contrib.summary.always_record_summaries():
         tf.contrib.summary.scalar(name, value)
 
 
@@ -101,7 +101,9 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='trainval')
+                                                                 split='trainval
+                                                                 
+                                                                 ')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
                                                               split='test')
@@ -128,6 +130,8 @@ def main():
     writer = tf.contrib.summary.create_file_writer(logdir)
     writer.set_as_default()
 
+    start_time = time.time()
+
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
     optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
@@ -148,12 +152,10 @@ def main():
             # print("Batch: ",batch)
             # epoch_accuracy(predictions=tf.nn.sigmoid(model(images)),labels=labels)
             if global_step.numpy() % args.log_interval == 0:
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
-                      'Training Accuracy:{4:.4f}'.format(ep,
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
-                                                         epoch_loss_avg.result(),
-                                                         epoch_accuracy.result()))
+                                                         epoch_loss_avg.result()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
                 logging_variable('train_loss',epoch_loss_avg.result())
