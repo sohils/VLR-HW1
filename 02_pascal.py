@@ -70,6 +70,11 @@ def test(model, dataset):
         mAP = util.eval_dataset_map(model, dataset)
     return test_loss.result(), mAP
 
+def logging_variable(name, value):
+    with tf.contrib.summary.always_record_summaries:
+        tf.contrib.summary.scalar(name, value)
+
+
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
     parser.add_argument('--batch-size', type=int, default=20,
@@ -140,6 +145,7 @@ def main():
                                           model.trainable_variables),
                                       global_step)
             epoch_loss_avg(loss_value)
+            # print("Batch: ",batch)
             # epoch_accuracy(predictions=tf.nn.sigmoid(model(images)),labels=labels)
             if global_step.numpy() % args.log_interval == 0:
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
@@ -150,13 +156,15 @@ def main():
                                                          epoch_accuracy.result()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
+                logging_variable('train_loss',epoch_loss_avg.result())
                 # train_log['accuracy'].append(epoch_accuracy.result())
             if global_step.numpy() % args.eval_interval == 0:
                 AP, mAP = util.eval_dataset_map(model, test_dataset)
                 # test_loss, test_map = test(model, test_dataset)
                 test_log['iter'].append(global_step.numpy())
                 # test_log['loss'].append(test_loss)
-                test_log['map'].append(test_map)
+                test_log['map'].append(mAP)
+                logging_variable('test_mAP',mAP)
 
     model.summary()
     end_time = time.time()
