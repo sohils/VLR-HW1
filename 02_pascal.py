@@ -72,7 +72,7 @@ def test(model, dataset):
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
-    parser.add_argument('--batch-size', type=int, default=10,
+    parser.add_argument('--batch-size', type=int, default=20,
                         help='input batch size for training')
     parser.add_argument('--epochs', type=int, default=5,
                         help='number of epochs to train')
@@ -99,7 +99,7 @@ def main():
                                                                  split='trainval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
-                                                              split='val')
+                                                              split='test')
 
     ## TODO modify the following code to apply data augmentation here
     train_images = train_images - IMAGENET_MEAN
@@ -178,7 +178,8 @@ def main():
     # plt.savefig("results/02_accuracy.png")
     # plt.show()
 
-
+    np.save("02_training.npy", train_log)
+    np.save("02_test.npy", test_log)
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     rand_AP = util.compute_ap(
