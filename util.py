@@ -45,7 +45,9 @@ def load_pascal(data_dir, class_names, split='train'):
     filename = data_dir+"ImageSets/Main/"+split+".txt"
     with open(filename) as fp:
             lines = [line.strip() for line in fp.readlines()]
-    for line in lines:
+    for index, line in enumerate(lines):
+        # if(index == 20): # Please delete this
+        #     break
         img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
         images.append(img)
 
@@ -58,7 +60,9 @@ def load_pascal(data_dir, class_names, split='train'):
         with open(filename) as fp:
             lines = [line.strip() for line in fp.readlines()]
         for image_index,line in enumerate(lines):
-            words = line.split(' ')
+            # if(image_index == 20): # Please delete this
+            #     break
+            words = line.split()
             if( words[1] == '1'):
                 labels[image_index,index] = 1
                 weights[image_index,index] = 1
@@ -68,8 +72,7 @@ def load_pascal(data_dir, class_names, split='train'):
             elif( words[1] == '-1'):
                 labels[image_index,index] = 0
                 weights[image_index,index] = 1
-
-    return images, labels, weights
+    return images.astype("float32"), labels.astype("int32"), weights.astype("int32")
 
 
 def cal_grad(model, loss_func, inputs, targets, weights=1.0):
@@ -129,11 +132,24 @@ def eval_dataset_map(model, dataset):
          MAP (float): mean average precision
     """
     ## TODO implement the code here
-    logits = model(inputs)
+    preds = []
+    gts = []
+    valids = []
+    for batch, (images, labels, weights) in enumerate(dataset):
+        preds.append(tf.nn.sigmoid(model(images)).numpy())
+        gts.append(labels)
+        valids.append(weights)
+    preds = np.vstack(preds)
+    gts = np.vstack(gts)
+    valids = np.vstack(valids)
     
-    # AP = compute_ap(gt=dataset.,pred=logits)
+    AP = compute_ap(gt=gts,pred=preds, valid = valids)
+    mAP = np.average(AP)
     return AP, mAP
 
+def eval_dataset_map_helper(prediction, dataset):
+    AP = compute_ap(prediction)
+    return AP, mAP
 
 def get_el(arr, i):
     try:
@@ -141,34 +157,21 @@ def get_el(arr, i):
     except IndexError:
         return arr
 
-def data_augmentation(images, labels, weights, seed):
+def data_augmentation(dataset, seed):
+    dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_left_right(x,y,z,seed)))
+    # dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_up_down(x,y,z,seed)))
+    dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_crop(x,y,z,seed)))
+    return dataset
+
+def data_augmentation_flip_left_right(images, labels, weights, seed):
     images = tf.image.random_flip_left_right(images,seed=seed)
-    images = tf.image.random_flip_up_down(images,seed=seed)
-    images = tf.image.random_crop(images, images.shape)
-    images = tf.image.random_brightness(images, max_delta=0.75)
     return (images, labels, weights)
 
+def data_augmentation_flip_up_down(images, labels, weights, seed):
+    images = tf.image.random_flip_up_down(images,seed=seed)
+    return (images, labels, weights)
 
-
-
-# Incorrect Excess Code
-    # with open(data_dir+"ImageSets/Main/"+split+".txt") as fp:
-    #     lines = [line.strip() for line in fp.readlines()]
-
-    # for line in lines:
-    #     label = np.zeros((len(class_names)),dtype='float32')
-    #     weight = np.ones((len(class_names)))
-    #     # img = keras.preprocessing.image.load_img(data_dir+"ImageSets/"+line.strip()+".jpg")
-    #     img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
-    #     img = img.astype('float32')/255.0
-    #     images.append(img)
-    #     e = xmletree.parse(data_dir+"Annotations/"+line.strip()+".xml").getroot()
-    #     for obj in e.findall('object'):
-    #         tag = class_names.index(obj.find('name').text)
-    #         label[tag]=1
-    #     labels.append(label)
-    #     weights.append(weight)
-
-    # images = np.asarray(images)
-    # labels = np.asarray(labels)
-    # weights = np.asarray(weights)
+def data_augmentation_crop(images, labels, weights, seed):
+    images = tf.image.random_crop(images, size = [224,224,3], seed = seed)
+    images = tf.image.resize_images(images, size = [256,256])
+    return (images, labels, weights)
