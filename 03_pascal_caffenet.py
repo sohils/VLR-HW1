@@ -27,7 +27,7 @@ class CaffeNet(keras.Model):
         super(CaffeNet, self).__init__(name='CaffeNet')
         self.num_classes = num_classes
         self.conv1 = layers.Conv2D(filters=96, #Need to add 4 
-                                   strides=[1,4,4,1]
+                                   strides=[4,4],
                                    kernel_size=[11, 11],
                                    padding="valid",
                                    activation='relu')
@@ -147,8 +147,11 @@ def main():
 
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
     train_dataset = util.data_augmentation(train_dataset,args.seed)
+    # print(train_dataset.output_shape)
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
+    test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z))
+    # print(test_dataset.output_shape)
     # test_dataset = util.data_augmentation(test_dataset,args.seed)
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
 
@@ -172,7 +175,8 @@ def main():
     global_step = tf.train.get_or_create_global_step()
    
     # Defining a decaying learning rate.
-    learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step, 5000, 0.5)
+    learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step=global_step, 
+                                        decay_steps=5000, decay_rate=0.5)
     # SGD + Momentum optimizer
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
 

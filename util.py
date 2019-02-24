@@ -46,8 +46,8 @@ def load_pascal(data_dir, class_names, split='train'):
     with open(filename) as fp:
             lines = [line.strip() for line in fp.readlines()]
     for index, line in enumerate(lines):
-        # if(index == 20): # Please delete this
-        #     break
+        if(index == 20): # Please delete this
+            break
         img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
         images.append(img)
 
@@ -60,8 +60,8 @@ def load_pascal(data_dir, class_names, split='train'):
         with open(filename) as fp:
             lines = [line.strip() for line in fp.readlines()]
         for image_index,line in enumerate(lines):
-            # if(image_index == 20): # Please delete this
-            #     break
+            if(image_index == 20): # Please delete this
+                break
             words = line.split()
             if( words[1] == '1'):
                 labels[image_index,index] = 1
@@ -172,5 +172,9 @@ def data_augmentation_flip_up_down(images, labels, weights, seed):
 
 def data_augmentation_crop(images, labels, weights, seed):
     images = tf.image.random_crop(images, size = [224,224,3], seed = seed)
-    images = tf.image.resize_images(images, size = [256,256])
+    # images = tf.image.resize_images(images, size = [256,256])
+    return (images, labels, weights)
+
+def center_crop(images, labels, weights):
+    images = tf.image.central_crop(images, (224/256))
     return (images, labels, weights)
