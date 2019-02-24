@@ -120,10 +120,10 @@ def main():
                         help='decay')
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed')
-    parser.add_argument('--log-interval', type=int, default=10,
+    parser.add_argument('--log-interval', type=int, default=250,
                         help='how many batches to wait before'
                              ' logging training status')
-    parser.add_argument('--eval-interval', type=int, default=20,
+    parser.add_argument('--eval-interval', type=int, default=250,
                         help='how many batches to wait before'
                              ' evaluate the model')
     parser.add_argument('--log-dir', type=str, default='tb',
