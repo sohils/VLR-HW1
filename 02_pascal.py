@@ -120,6 +120,9 @@ def main():
     # test_dataset = util.data_augmentation(test_dataset,args.seed)
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
 
+    del(train_images)
+    del(test_images)
+
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
     # Logging block
