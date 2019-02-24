@@ -142,13 +142,12 @@ def eval_dataset_map(model, dataset):
     preds = np.vstack(preds)
     gts = np.vstack(gts)
     valids = np.vstack(valids)
-    
-    AP = compute_ap(gt=gts,pred=preds, valid = valids)
-    mAP = np.average(AP)
-    return AP, mAP
+    return (eval_dataset_map_helper(gt=gts,pred=preds, valid = valids))
 
-def eval_dataset_map_helper(prediction, dataset):
-    AP = compute_ap(prediction)
+
+def eval_dataset_map_helper(gt, pred, valid):
+    AP = compute_ap(gt, pred, valid)
+    mAP = np.average(AP)
     return AP, mAP
 
 def get_el(arr, i):

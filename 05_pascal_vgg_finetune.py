@@ -10,6 +10,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
+
 import time
 
 import util
@@ -60,9 +61,6 @@ class SimpleCNN(keras.Model):
         return tf.TensorShape(shape)
 
 def test(model, dataset):
-    preds = []
-    gts = []
-    valids = []
     test_loss = tfe.metrics.Mean()
     test_accuracy = tfe.metrics.BinaryAccuracy(threshold=0.7)
     for batch, (images, labels, weights) in enumerate(dataset):
@@ -70,16 +68,9 @@ def test(model, dataset):
         loss_value = tf.losses.sigmoid_cross_entropy(labels, logits)
         prediction = tf.nn.sigmoid(logits)
         test_loss(loss_value,weights=weights)
-        test_accuracy(labels=tf.cast(labels,tf.bool), predictions=prediction, weights=weights)
-        preds.append(prediction.numpy())
-        gts.append(labels.numpy())
-        valids.append(weights.numpy())
+        test_accuracy(labels=labels, predictions=prediction, weights=weights)
 
-    preds = np.vstack(preds)
-    gts = np.vstack(gts)
-    valids = np.vstack(valids)
-
-    AP, mAP = util.eval_dataset_map_helper(gts, preds, valids)
+    AP, mAP = util.eval_dataset_map(model, dataset)
 
     return test_loss.result(), test_accuracy.result(), mAP
 
@@ -127,11 +118,8 @@ def main():
     train_dataset = util.data_augmentation(train_dataset,args.seed)
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
-    # test_dataset = util.data_augmentation(test_dataset,args.seed)
+    test_dataset = util.data_augmentation(test_dataset,args.seed)
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
-
-    del(train_images)
-    del(test_images)
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
@@ -165,7 +153,7 @@ def main():
                                       global_step)
             epoch_loss_avg(loss_value, weights=weights)
             pred = tf.nn.sigmoid(model(images))
-            epoch_accuracy(predictions=pred,labels=tf.cast(labels,tf.bool),weights=weights)
+            epoch_accuracy(predictions=pred,labels=labels,weights=weights)
             print("Batch: ",batch)
             if global_step.numpy() % args.log_interval == 0:
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,

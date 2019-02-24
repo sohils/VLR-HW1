@@ -26,32 +26,52 @@ class SimpleCNN(keras.Model):
     def __init__(self, num_classes=10):
         super(SimpleCNN, self).__init__(name='SimpleCNN')
         self.num_classes = num_classes
-        self.conv1 = layers.Conv2D(filters=32,
+        self.conv1 = layers.Conv2D(filters=96, #Need to add 4 
+                                   strides=[1,4,4,1]
+                                   kernel_size=[11, 11],
+                                   padding="valid",
+                                   activation='relu')
+        self.pool1 = layers.MaxPool2D(pool_size=(3, 2))
+        self.conv2 = layers.Conv2D(filters=256,
                                    kernel_size=[5, 5],
                                    padding="same",
                                    activation='relu')
-        self.pool1 = layers.MaxPool2D(pool_size=(2, 2))
-        self.conv2 = layers.Conv2D(filters=64,
-                                   kernel_size=[5, 5],
+        self.pool2 = layers.MaxPool2D(pool_size=(3, 2))
+        self.conv3 = layers.Conv2D(filters=384,
+                                   kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.pool2 = layers.MaxPool2D(pool_size=(2, 2))
-
+        self.conv4 = layers.Conv2D(filters=384,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv5 = layers.Conv2D(filters=256,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.pool3 = layers.MaxPool2D(pool_size=(3, 2))
         self.flat = layers.Flatten()
-
-        self.dense1 = layers.Dense(1024, activation='relu')
-        self.dropout = layers.Dropout(rate=0.4)
-        self.dense2 = layers.Dense(num_classes)
+        self.dense1 = layers.Dense(4096, activation='relu')
+        self.dropout1 = layers.Dropout(rate=0.5)
+        self.dense2 = layers.Dense(4096, activation='relu')
+        self.dropout2 = layers.Dropout(rate=0.5)
+        self.dense3 = layers.Dense(num_classes)
 
     def call(self, inputs, training=False):
         x = self.conv1(inputs)
         x = self.pool1(x)
         x = self.conv2(x)
         x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.pool3(x)
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
-        out = self.dropout(out, training=training)
+        out = self.dropout1(out, training=training)
         out = self.dense2(out)
+        out = self.dropout2(out, training=training)
+        out = self.dense3(out)
         return out
 
     def compute_output_shape(self, input_shape):
@@ -60,9 +80,6 @@ class SimpleCNN(keras.Model):
         return tf.TensorShape(shape)
 
 def test(model, dataset):
-    preds = []
-    gts = []
-    valids = []
     test_loss = tfe.metrics.Mean()
     test_accuracy = tfe.metrics.BinaryAccuracy(threshold=0.7)
     for batch, (images, labels, weights) in enumerate(dataset):
@@ -70,23 +87,15 @@ def test(model, dataset):
         loss_value = tf.losses.sigmoid_cross_entropy(labels, logits)
         prediction = tf.nn.sigmoid(logits)
         test_loss(loss_value,weights=weights)
-        test_accuracy(labels=tf.cast(labels,tf.bool), predictions=prediction, weights=weights)
-        preds.append(prediction.numpy())
-        gts.append(labels.numpy())
-        valids.append(weights.numpy())
+        test_accuracy(labels=labels, predictions=prediction, weights=weights)
 
-    preds = np.vstack(preds)
-    gts = np.vstack(gts)
-    valids = np.vstack(valids)
-
-    AP, mAP = util.eval_dataset_map_helper(gts, preds, valids)
+    AP, mAP = util.eval_dataset_map(model, dataset)
 
     return test_loss.result(), test_accuracy.result(), mAP
 
 def logging_variable(name, value):
     with tf.contrib.summary.always_record_summaries():
         tf.contrib.summary.scalar(name, value)
-
 
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
@@ -96,12 +105,16 @@ def main():
                         help='number of epochs to train')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='learning rate')
+    parser.add_argument('--momentum', type=float, default=0.9,
+                        help='momentum')
+    parser.add_argument('--decay', type=float, default=0.001,
+                        help='decay')
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed')
     parser.add_argument('--log-interval', type=int, default=10,
                         help='how many batches to wait before'
                              ' logging training status')
-    parser.add_argument('--eval-interval', type=int, default=50,
+    parser.add_argument('--eval-interval', type=int, default=20,
                         help='how many batches to wait before'
                              ' evaluate the model')
     parser.add_argument('--log-dir', type=str, default='tb',
@@ -114,12 +127,10 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='trainval')
+                                                                 split='train')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
-                                                              split='test')
-
-    ## TODO modify the following code to apply data augmentation here
+                                                              split='val')
     train_images = train_images - IMAGENET_MEAN
     test_images = test_images - IMAGENET_MEAN
 
@@ -127,11 +138,8 @@ def main():
     train_dataset = util.data_augmentation(train_dataset,args.seed)
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
-    # test_dataset = util.data_augmentation(test_dataset,args.seed)
+    test_dataset = util.data_augmentation(test_dataset,args.seed)
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
-
-    del(train_images)
-    del(test_images)
 
     model = SimpleCNN(num_classes=len(CLASS_NAMES))
 
@@ -148,7 +156,13 @@ def main():
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
+   
+    # Defining a decaying learning rate.
+    learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step, 5000, 0.5)
+
+    # SGD + Momentum optimizer
+    optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
+
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'map': [], 'accuracy': []}
     for ep in range(args.epochs):
@@ -165,13 +179,14 @@ def main():
                                       global_step)
             epoch_loss_avg(loss_value, weights=weights)
             pred = tf.nn.sigmoid(model(images))
-            epoch_accuracy(predictions=pred,labels=tf.cast(labels,tf.bool),weights=weights)
-            print("Batch: ",batch)
+            epoch_accuracy(predictions=pred,labels=labels,weights=weights)
             if global_step.numpy() % args.log_interval == 0:
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
+                      'Training Accuracy:{4:.4f}'.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
-                                                         epoch_loss_avg.result()))
+                                                         epoch_loss_avg.result(),
+                                                         epoch_accuracy.result()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
                 train_log['accuracy'].append(epoch_accuracy.result())
@@ -179,12 +194,10 @@ def main():
                 logging_variable('train_loss',epoch_loss_avg.result())
                 logging_variable('train_accuracy',epoch_accuracy.result())
             if global_step.numpy() % args.eval_interval == 0:
-                # AP, mAP = util.eval_dataset_map(model, test_dataset)
-                test_loss, test_accuracy, mAP = test(model, test_dataset)
+                test_loss, test_acc = test(model, test_dataset)
                 test_log['iter'].append(global_step.numpy())
                 test_log['loss'].append(test_loss)
-                test_log['accuracy'].append(test_accuracy)
-                test_log['map'].append(mAP)
+                test_log['accuracy'].append(test_acc)
                 # Logging for TensorFlow
                 logging_variable('test_mAP',mAP)
                 logging_variable('test_loss',test_loss)
@@ -193,9 +206,9 @@ def main():
     model.summary()
     end_time = time.time()
     print('Elapsed time: {0:.3f}s'.format(end_time - start_time))
-
-    np.save("02_training.npy", train_log)
-    np.save("02_test.npy", test_log)
+    
+    np.save("03_training.npy", train_log)
+    np.save("03_test.npy", test_log)
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     rand_AP = util.compute_ap(
