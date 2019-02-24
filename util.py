@@ -46,8 +46,8 @@ def load_pascal(data_dir, class_names, split='train'):
     with open(filename) as fp:
             lines = [line.strip() for line in fp.readlines()]
     for index, line in enumerate(lines):
-        if(index == 20): # Please delete this
-            break
+        # if(index == 20): # Please delete this
+        #     break
         img = np.array(Image.open(data_dir+"JPEGImages/"+line.strip()+".jpg").resize((256,256)))
         images.append(img)
 
@@ -60,8 +60,8 @@ def load_pascal(data_dir, class_names, split='train'):
         with open(filename) as fp:
             lines = [line.strip() for line in fp.readlines()]
         for image_index,line in enumerate(lines):
-            if(image_index == 20): # Please delete this
-                break
+            # if(image_index == 20): # Please delete this
+            #     break
             words = line.split()
             if( words[1] == '1'):
                 labels[image_index,index] = 1
