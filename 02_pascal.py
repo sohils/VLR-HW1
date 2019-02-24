@@ -127,6 +127,7 @@ def main():
     train_dataset = util.data_augmentation(train_dataset,args.seed)
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
+    test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z))
     # test_dataset = util.data_augmentation(test_dataset,args.seed)
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
 
