@@ -22,34 +22,67 @@ CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
 IMAGENET_MEAN = np.array([123.68, 116.81, 103.94],dtype="float32")
 
 
-class SimpleCNN(keras.Model):
+class VGG16(keras.Model):
     def __init__(self, num_classes=10):
-        super(SimpleCNN, self).__init__(name='SimpleCNN')
+        super(VGG16, self).__init__(name='VGG16')
         self.num_classes = num_classes
-        self.conv1 = layers.Conv2D(filters=96, #Need to add 4 
-                                   strides=[1,4,4,1]
-                                   kernel_size=[11, 11],
-                                   padding="valid",
-                                   activation='relu')
-        self.pool1 = layers.MaxPool2D(pool_size=(3, 2))
-        self.conv2 = layers.Conv2D(filters=256,
-                                   kernel_size=[5, 5],
-                                   padding="same",
-                                   activation='relu')
-        self.pool2 = layers.MaxPool2D(pool_size=(3, 2))
-        self.conv3 = layers.Conv2D(filters=384,
+        self.conv1_1 = layers.Conv2D(filters=64,
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.conv4 = layers.Conv2D(filters=384,
+        self.conv1_2 = layers.Conv2D(filters=64,
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.conv5 = layers.Conv2D(filters=256,
+        self.pool1 = layers.MaxPool2D(pool_size=(2, 2), strides=(2,2))
+        self.conv2_1 = layers.Conv2D(filters=128,
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.pool3 = layers.MaxPool2D(pool_size=(3, 2))
+        self.conv2_2 = layers.Conv2D(filters=128,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.pool2 = layers.MaxPool2D(pool_size=(2, 2), strides=(2,2))
+        self.conv3_1 = layers.Conv2D(filters=256,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv3_2 = layers.Conv2D(filters=256,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv3_3 = layers.Conv2D(filters=256,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.pool3 = layers.MaxPool2D(pool_size=(2, 2), strides=(2,2))
+        self.conv4_1 = layers.Conv2D(filters=512,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv4_2 = layers.Conv2D(filters=512,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv4_3 = layers.Conv2D(filters=512,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.pool4 = layers.MaxPool2D(pool_size=(2, 2), strides=(2,2))
+        self.conv5_1 = layers.Conv2D(filters=512,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv5_2 = layers.Conv2D(filters=512,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.conv5_3 = layers.Conv2D(filters=512,
+                                   kernel_size=[3, 3],
+                                   padding="same",
+                                   activation='relu')
+        self.pool5 = layers.MaxPool2D(pool_size=(2, 2), strides=(2,2))
         self.flat = layers.Flatten()
         self.dense1 = layers.Dense(4096, activation='relu')
         self.dropout1 = layers.Dropout(rate=0.5)
@@ -58,14 +91,24 @@ class SimpleCNN(keras.Model):
         self.dense3 = layers.Dense(num_classes)
 
     def call(self, inputs, training=False):
-        x = self.conv1(inputs)
+        x = self.conv1_1(inputs)
+        x = self.conv1_2(x)
         x = self.pool1(x)
-        x = self.conv2(x)
+        x = self.conv2_1(x)
+        x = self.conv2_2(x)
         x = self.pool2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
+        x = self.conv3_1(x)
+        x = self.conv3_2(x)
+        x = self.conv3_3(x)
         x = self.pool3(x)
+        x = self.conv4_1(x)
+        x = self.conv4_2(x)
+        x = self.conv4_3(x)
+        x = self.pool4(x)
+        x = self.conv5_1(x)
+        x = self.conv5_2(x)
+        x = self.conv5_3(x)
+        x = self.pool5(x)
         flat_x = self.flat(x)
         out = self.dense1(flat_x)
         out = self.dropout1(out, training=training)
@@ -80,6 +123,9 @@ class SimpleCNN(keras.Model):
         return tf.TensorShape(shape)
 
 def test(model, dataset):
+    preds = []
+    gts = []
+    valids = []
     test_loss = tfe.metrics.Mean()
     test_accuracy = tfe.metrics.BinaryAccuracy(threshold=0.7)
     for batch, (images, labels, weights) in enumerate(dataset):
@@ -87,21 +133,36 @@ def test(model, dataset):
         loss_value = tf.losses.sigmoid_cross_entropy(labels, logits)
         prediction = tf.nn.sigmoid(logits)
         test_loss(loss_value,weights=weights)
-        test_accuracy(labels=labels, predictions=prediction, weights=weights)
-
-    AP, mAP = util.eval_dataset_map(model, dataset)
-
+        test_accuracy(labels=tf.cast(labels,tf.bool), predictions=prediction, weights=weights)
+        preds.append(prediction.numpy())
+        gts.append(labels.numpy())
+        valids.append(weights.numpy())
+    # Stack all the predicitons, labels and weights
+    preds = np.vstack(preds)
+    gts = np.vstack(gts)
+    valids = np.vstack(valids)
+    # Calculate mAP
+    AP, mAP = util.eval_dataset_map_helper(gts, preds, valids)
     return test_loss.result(), test_accuracy.result(), mAP
 
 def logging_variable(name, value):
     with tf.contrib.summary.always_record_summaries():
         tf.contrib.summary.scalar(name, value)
 
+def logging_histogram(name, tensor):
+    with tf.contrib.summary.always_record_summaries():
+        for index, g in enumerate(tensor):
+            tf.contrib.summary.histogram(str(index)+"-grad" , g) 
+
+def logging_image(name, tensor):
+    with tf.contrib.summary.always_record_summaries():
+        tf.contrib.summary.image(name=name, tensor=tensor, max_images=1)
+
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
     parser.add_argument('--batch-size', type=int, default=20,
                         help='input batch size for training')
-    parser.add_argument('--epochs', type=int, default=5,
+    parser.add_argument('--epochs', type=int, default=60,
                         help='number of epochs to train')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='learning rate')
@@ -111,10 +172,10 @@ def main():
                         help='decay')
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed')
-    parser.add_argument('--log-interval', type=int, default=10,
+    parser.add_argument('--log-interval', type=int, default=125,
                         help='how many batches to wait before'
                              ' logging training status')
-    parser.add_argument('--eval-interval', type=int, default=20,
+    parser.add_argument('--eval-interval', type=int, default=250,
                         help='how many batches to wait before'
                              ' evaluate the model')
     parser.add_argument('--log-dir', type=str, default='tb',
@@ -127,10 +188,12 @@ def main():
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
-                                                                 split='train')
+                                                                 split='trainval')
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
-                                                              split='val')
+                                                              split='test')
+
+    ## TODO modify the following code to apply data augmentation here
     train_images = train_images - IMAGENET_MEAN
     test_images = test_images - IMAGENET_MEAN
 
@@ -138,10 +201,14 @@ def main():
     train_dataset = util.data_augmentation(train_dataset,args.seed)
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
-    test_dataset = util.data_augmentation(test_dataset,args.seed)
+    test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z))
+    # test_dataset = util.data_augmentation(test_dataset,args.seed)
     test_dataset = test_dataset.shuffle(10000).batch(args.batch_size)
 
-    model = SimpleCNN(num_classes=len(CLASS_NAMES))
+    del(train_images)
+    del(test_images)
+
+    model = VGG16(num_classes=len(CLASS_NAMES))
 
     # Logging block
     logdir = os.path.join(args.log_dir,
@@ -158,10 +225,12 @@ def main():
     global_step = tf.train.get_or_create_global_step()
    
     # Defining a decaying learning rate.
-    learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step, 5000, 0.5)
-
+    learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step=global_step, 
+                                        decay_steps=5000, decay_rate=0.5)
     # SGD + Momentum optimizer
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
+
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
 
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'map': [], 'accuracy': []}
@@ -179,20 +248,24 @@ def main():
                                       global_step)
             epoch_loss_avg(loss_value, weights=weights)
             pred = tf.nn.sigmoid(model(images))
-            epoch_accuracy(predictions=pred,labels=labels,weights=weights)
+            epoch_accuracy(predictions=pred,labels=tf.cast(labels,tf.bool),weights=weights)
             if global_step.numpy() % args.log_interval == 0:
                 print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
-                      'Training Accuracy:{4:.4f}'.format(ep,
+                      'Training Accuracy:{4:.4f} Leaning Rate:{5:.4}'.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
                                                          epoch_loss_avg.result(),
-                                                         epoch_accuracy.result()))
+                                                         epoch_accuracy.result(),
+                                                         learning_rate()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
                 train_log['accuracy'].append(epoch_accuracy.result())
                 # Logging for TensorFlow
                 logging_variable('train_loss',epoch_loss_avg.result())
                 logging_variable('train_accuracy',epoch_accuracy.result())
+                logging_variable('learning_rate',learning_rate())
+                logging_histogram('histogram_of_gradient',grads)
+                logging_image('train_image',images)
             if global_step.numpy() % args.eval_interval == 0:
                 test_loss, test_acc = test(model, test_dataset)
                 test_log['iter'].append(global_step.numpy())
@@ -202,13 +275,16 @@ def main():
                 logging_variable('test_mAP',mAP)
                 logging_variable('test_loss',test_loss)
                 logging_variable('test_accuracy',test_accuracy)
+        if ep%2 ==0 :
+            checkpoint.save("./checkpoints/04_vgg_ckpt")
 
     model.summary()
     end_time = time.time()
     print('Elapsed time: {0:.3f}s'.format(end_time - start_time))
     
-    np.save("03_training.npy", train_log)
-    np.save("03_test.npy", test_log)
+    np.save("04_training.npy", train_log)
+    np.save("04_test.npy", test_log)
+    checkpoint.save("./checkpoints/04_vgg_ckpt")
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     rand_AP = util.compute_ap(
