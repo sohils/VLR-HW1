@@ -89,7 +89,7 @@ def cal_grad(model, loss_func, inputs, targets, weights=1.0):
     """
 
     with tf.GradientTape() as tape:
-        logits = model(inputs)
+        logits = model(inputs, training=True)
         loss_value = loss_func(targets, logits, weights)
     return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
@@ -159,7 +159,7 @@ def get_el(arr, i):
 def data_augmentation(dataset, seed):
     dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_left_right(x,y,z,seed)))
     # dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_up_down(x,y,z,seed)))
-    dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_crop(x,y,z,seed)))
+    dataset = dataset.map(lambda x,y,z: data_augmentation_crop(x,y,z,seed))
     return dataset
 
 def data_augmentation_flip_left_right(images, labels, weights, seed):
