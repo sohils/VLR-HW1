@@ -13,7 +13,6 @@ from tensorflow.keras import layers
 import time
 
 import util
-import matplotlib.pyplot as plt
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -186,6 +185,8 @@ def main():
     util.set_random_seed(args.seed)
     sess = util.set_session()
 
+    print("loading data")
+
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
                                                                  split='trainval')
@@ -196,7 +197,7 @@ def main():
     ## TODO modify the following code to apply data augmentation here
     train_images = train_images - IMAGENET_MEAN
     test_images = test_images - IMAGENET_MEAN
-
+    print("Converting data to tensors")
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels, train_weights))
     train_dataset = util.data_augmentation(train_dataset,args.seed)
     train_dataset = train_dataset.shuffle(10000).batch(args.batch_size)
@@ -207,7 +208,7 @@ def main():
 
     del(train_images)
     del(test_images)
-
+    print("Deleting original data")
     model = VGG16(num_classes=len(CLASS_NAMES))
 
     # Logging block
@@ -267,10 +268,11 @@ def main():
                 logging_histogram('histogram_of_gradient',grads)
                 logging_image('train_image',images)
             if global_step.numpy() % args.eval_interval == 0:
-                test_loss, test_acc = test(model, test_dataset)
+                test_loss, test_accuracy, mAP = test(model, test_dataset)
                 test_log['iter'].append(global_step.numpy())
                 test_log['loss'].append(test_loss)
-                test_log['accuracy'].append(test_acc)
+                test_log['accuracy'].append(test_accuracy)
+                test_log['map'].append(mAP)
                 # Logging for TensorFlow
                 logging_variable('test_mAP',mAP)
                 logging_variable('test_loss',test_loss)

@@ -13,7 +13,6 @@ from tensorflow.keras import layers
 import time
 
 import util
-import matplotlib.pyplot as plt
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
