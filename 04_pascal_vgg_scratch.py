@@ -232,7 +232,8 @@ def main():
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
 
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
-
+    status = checkpoint.restore(tf.train.latest_checkpoint("./checkpoints/"))
+    
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'map': [], 'accuracy': []}
     for ep in range(args.epochs):
