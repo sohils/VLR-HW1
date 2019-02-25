@@ -156,6 +156,8 @@ def main():
     del(test_images)
 
     model = CaffeNet(num_classes=len(CLASS_NAMES))
+    # model.build(input_shape=(1,224,224,3))
+    # model.load_weights("./checkpoints/0-03-weights.h5")
 
     # Logging block
     logdir = os.path.join(args.log_dir,
@@ -173,7 +175,7 @@ def main():
    
     # Defining a decaying learning rate.
     learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step=global_step, 
-                                        decay_steps=5000, decay_rate=0.5,,staircase=True)
+                                        decay_steps=5000, decay_rate=0.5,staircase=True)
     # SGD + Momentum optimizer
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
 
@@ -220,7 +222,7 @@ def main():
                 logging_variable('test_loss',test_loss)
                 logging_variable('test_accuracy',test_accuracy)
         if ep%2 ==0 :
-            model.save_weights("./checkpoints/"+str(checkpoint_number))+"-03-weights.h5")
+            model.save_weights("./checkpoints/"+str(checkpoint_number)+"-03-weights.h5")
             checkpoint_number+=1
 
     model.summary()
