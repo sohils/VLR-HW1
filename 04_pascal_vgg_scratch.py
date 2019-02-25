@@ -227,12 +227,9 @@ def main():
    
     # Defining a decaying learning rate.
     learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step=global_step, 
-                                        decay_steps=5000, decay_rate=0.5)
+                                        decay_steps=5000, decay_rate=0.5,staircase=True)
     # SGD + Momentum optimizer
     optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
-
-    checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
-    status = checkpoint.restore(tf.train.latest_checkpoint("./checkpoints/"))
     
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'map': [], 'accuracy': []}
@@ -278,8 +275,6 @@ def main():
                 logging_variable('test_mAP',mAP)
                 logging_variable('test_loss',test_loss)
                 logging_variable('test_accuracy',test_accuracy)
-        if ep%2 ==0 :
-            checkpoint.save("./checkpoints/04_vgg_ckpt")
 
     model.summary()
     end_time = time.time()
@@ -287,7 +282,7 @@ def main():
     
     np.save("04_training.npy", train_log)
     np.save("04_test.npy", test_log)
-    checkpoint.save("./checkpoints/04_vgg_ckpt")
+    model.save_weights("./checkpoints/"+str(global_step.numpy())+"-04-weights.h5")
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     rand_AP = util.compute_ap(
