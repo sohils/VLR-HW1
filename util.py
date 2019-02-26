@@ -157,7 +157,7 @@ def get_el(arr, i):
         return arr
 
 def data_augmentation(dataset, seed):
-    dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_left_right(x,y,z,seed)))
+    dataset = dataset.map(lambda x,y,z: data_augmentation_flip_left_right(x,y,z,seed))
     # dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_up_down(x,y,z,seed)))
     dataset = dataset.map(lambda x,y,z: data_augmentation_crop(x,y,z,seed))
     return dataset
@@ -172,7 +172,7 @@ def data_augmentation_flip_up_down(images, labels, weights, seed):
 
 def data_augmentation_crop(images, labels, weights, seed):
     images = tf.image.random_crop(images, size = [224,224,3], seed = seed)
-    # images = tf.image.resize_images(images, size = [256,256])
+    # images = tf.image.resize_images(images, size = [224,224])
     return (images, labels, weights)
 
 def center_crop(images, labels, weights):

@@ -159,21 +159,24 @@ def logging_image(name, tensor):
     with tf.contrib.summary.always_record_summaries():
         tf.contrib.summary.image(name=name, tensor=tensor, max_images=1)
 
-
 def main():
     parser = argparse.ArgumentParser(description='TensorFlow Pascal Example')
     parser.add_argument('--batch-size', type=int, default=20,
                         help='input batch size for training')
-    parser.add_argument('--epochs', type=int, default=5,
+    parser.add_argument('--epochs', type=int, default=10,
                         help='number of epochs to train')
-    parser.add_argument('--lr', type=float, default=0.001,
+    parser.add_argument('--lr', type=float, default=0.0001,
                         help='learning rate')
+    parser.add_argument('--momentum', type=float, default=0.9,
+                        help='momentum')
+    parser.add_argument('--decay', type=float, default=0.5,
+                        help='decay')
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed')
-    parser.add_argument('--log-interval', type=int, default=10,
+    parser.add_argument('--log-interval', type=int, default=60,
                         help='how many batches to wait before'
                              ' logging training status')
-    parser.add_argument('--eval-interval', type=int, default=50,
+    parser.add_argument('--eval-interval', type=int, default=60,
                         help='how many batches to wait before'
                              ' evaluate the model')
     parser.add_argument('--log-dir', type=str, default='tb',
@@ -183,12 +186,9 @@ def main():
     args = parser.parse_args()
     util.set_random_seed(args.seed)
     sess = util.set_session()
+
     filename = './data/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
     f = h5py.File(filename, 'r')
-
-    # demo_model = keras.models.Model()
-    # demo_model.build(input_shape=(1,224,224,3))
-    # demo_model.load_weights(filepath='./data/vgg16_weights_tf_dim_ordering_tf_kernels.h5', by_name=False)
 
     model = VGG16(num_classes=len(CLASS_NAMES))
     model.build(input_shape=(1,224,224,3))
@@ -203,11 +203,6 @@ def main():
         my_model_index+=1
         if(l=='fc2'):
             break
-
-    for index in len(demo_model.layers):
-        a = demo_model.get_layer(index).get_weights()
-
-    model.load_weights(filepath='./data/vgg16_weights_tf_dim_ordering_tf_kernels.h5', by_name=False)
 
     train_images, train_labels, train_weights = util.load_pascal(args.data_dir,
                                                                  class_names=CLASS_NAMES,
@@ -245,7 +240,13 @@ def main():
 
     ## TODO write the training and testing code for multi-label classification
     global_step = tf.train.get_or_create_global_step()
-    optimizer = tf.train.AdamOptimizer(learning_rate=args.lr)
+   
+    # Defining a decaying learning rate.
+    learning_rate = tf.train.exponential_decay(learning_rate=args.lr, global_step=global_step, 
+                                        decay_steps=1000, decay_rate=0.5,staircase=True)
+    # SGD + Momentum optimizer
+    optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=args.momentum)
+    
     train_log = {'iter': [], 'loss': [], 'accuracy': []}
     test_log = {'iter': [], 'loss': [], 'map': [], 'accuracy': []}
     for ep in range(args.epochs):
@@ -262,21 +263,23 @@ def main():
                                       global_step)
             epoch_loss_avg(loss_value, weights=weights)
             pred = tf.nn.sigmoid(model(images))
-            epoch_accuracy(predictions=pred,labels=labels,weights=weights)
-            print("Batch: ",batch)
+            epoch_accuracy(predictions=pred,labels=tf.cast(labels,tf.bool),weights=weights)
             if global_step.numpy() % args.log_interval == 0:
-                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '.format(ep,
+                print('Epoch: {0:d}/{1:d} Iteration:{2:d}  Training Loss:{3:.4f}  '
+                      'Training Accuracy:{4:.4f} Leaning Rate:{5:.4}'.format(ep,
                                                          args.epochs,
                                                          global_step.numpy(),
-                                                         epoch_loss_avg.result()))
+                                                         epoch_loss_avg.result(),
+                                                         epoch_accuracy.result(),
+                                                         learning_rate()))
                 train_log['iter'].append(global_step.numpy())
                 train_log['loss'].append(epoch_loss_avg.result())
                 train_log['accuracy'].append(epoch_accuracy.result())
                 # Logging for TensorFlow
                 logging_variable('train_loss',epoch_loss_avg.result())
                 logging_variable('train_accuracy',epoch_accuracy.result())
+                logging_variable('learning_rate',learning_rate())
             if global_step.numpy() % args.eval_interval == 0:
-                # AP, mAP = util.eval_dataset_map(model, test_dataset)
                 test_loss, test_accuracy, mAP = test(model, test_dataset)
                 test_log['iter'].append(global_step.numpy())
                 test_log['loss'].append(test_loss)
@@ -291,8 +294,9 @@ def main():
     end_time = time.time()
     print('Elapsed time: {0:.3f}s'.format(end_time - start_time))
 
-    np.save("02_training.npy", train_log)
-    np.save("02_test.npy", test_log)
+    np.save("05_training.npy", train_log)
+    np.save("05_test.npy", test_log)
+    model.save_weights("./checkpoints/"+str(global_step.numpy())+"-05-weights.h5")
 
     AP, mAP = util.eval_dataset_map(model, test_dataset)
     rand_AP = util.compute_ap(
