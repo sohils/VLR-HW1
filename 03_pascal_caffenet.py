@@ -30,12 +30,12 @@ class CaffeNet(keras.Model):
                                    kernel_size=[11, 11],
                                    padding="valid",
                                    activation='relu')
-        self.pool1 = layers.MaxPool2D(pool_size=(3, 3), strides=(3,3))
+        self.pool1 = layers.MaxPool2D(pool_size=(3, 3), strides=(2,2))
         self.conv2 = layers.Conv2D(filters=256,
                                    kernel_size=[5, 5],
                                    padding="same",
                                    activation='relu')
-        self.pool2 = layers.MaxPool2D(pool_size=(3, 3), strides=(3,3))
+        self.pool2 = layers.MaxPool2D(pool_size=(3, 3), strides=(2,2))
         self.conv3 = layers.Conv2D(filters=384,
                                    kernel_size=[3, 3],
                                    padding="same",
@@ -48,7 +48,7 @@ class CaffeNet(keras.Model):
                                    kernel_size=[3, 3],
                                    padding="same",
                                    activation='relu')
-        self.pool3 = layers.MaxPool2D(pool_size=(3, 3), strides=(3,3))
+        self.pool3 = layers.MaxPool2D(pool_size=(3, 3), strides=(2,2))
         self.flat = layers.Flatten()
         self.dense1 = layers.Dense(4096, activation='relu')
         self.dropout1 = layers.Dropout(rate=0.5)
