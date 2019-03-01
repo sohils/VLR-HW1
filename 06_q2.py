@@ -314,10 +314,10 @@ def main():
     print("Extracted test images")
 
     for index, (images, labels, weights) in enumerate(test_dataset):
-        feature_vector_caffe_pool5 = caffe_model.do_pool5(images).flatten()
-        feature_vector_caffe_fc7 = caffe_model.do_fc7(images).flatten()
-        feature_vector_vgg_pool5 = vgg_model.do_pool5(images).flatten()
-        feature_vector_vgg_fc7 = vgg_model.do_fc7(images).flatten()
+        feature_vector_caffe_pool5 = caffe_model.do_pool5(images).numpy().flatten()
+        feature_vector_caffe_fc7 = caffe_model.do_fc7(images).numpy().flatten()
+        feature_vector_vgg_pool5 = vgg_model.do_pool5(images).numpy().flatten()
+        feature_vector_vgg_fc7 = vgg_model.do_fc7(images).numpy().flatten()
 
         test_feature_vector_caffe_pool5.append(np.sum(np.square(ground_feature_vector_caffe_pool5 - feature_vector_caffe_pool5), axis=1))
         test_feature_vector_caffe_fc7.append(np.sum(np.square(ground_feature_vector_caffe_fc7 - feature_vector_caffe_fc7), axis=1))
