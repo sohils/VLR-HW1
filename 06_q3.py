@@ -12,10 +12,12 @@ from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
 
 import time
+import random
 
 import util
 import matplotlib.pyplot as plt
 from PIL import Image
+from sklearn.manifold import TSNE
 
 CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -118,9 +120,32 @@ def main():
     caffe_model.build(input_shape=(1,224,224,3))
     caffe_model.load_weights("checkpoints/30-03-weights.h5")
 
+
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
                                                               split='test')
+
+    max_index = len(test_images.shape[0])
+    indices = random.sample(range(0, max_index), 1000)
+    test_images = test_images[indices]
+    test_labels = test_labels[indices]
+    test_weights = test_weights[indices]       
+
     test_images = test_images - IMAGENET_MEAN
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
     test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z)).batch(1)
+    
+    feature_vector_caffe_fc7=[]
+
+    for index, (images, labels, weights) in enumerate(test_dataset):
+        feature_vector_caffe_fc7.append(caffe_model.do_fc7(images))
+    
+    feature_vector_caffe_fc7=np.asarray(feature_vector_caffe_fc7)
+
+    caffe_fc7_tsne_projection = TSNE(n_components=2).fit_transform(feature_vector_caffe_fc7)
+    np.savez("tsne.npz", projections=caffe_fc7_tsne_projection, labels=test_labels)
+    # plt.scatter(caffe_fc7_tsne_projection[:,0], caffe_fc7_tsne_projection[:,1])
+
+if __name__ == '__main__':
+    tf.enable_eager_execution()
+    main()
