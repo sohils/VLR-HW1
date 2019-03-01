@@ -138,7 +138,7 @@ def main():
     feature_vector_caffe_fc7=[]
 
     for index, (images, labels, weights) in enumerate(test_dataset):
-        feature_vector_caffe_fc7.append(caffe_model.do_fc7(images).numpy())
+        feature_vector_caffe_fc7.append(caffe_model.do_fc7(images).numpy().flatten())
     
     feature_vector_caffe_fc7=np.asarray(feature_vector_caffe_fc7)
     print(feature_vector_caffe_fc7.shape)
