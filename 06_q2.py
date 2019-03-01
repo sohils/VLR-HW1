@@ -302,6 +302,7 @@ def main():
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
                                                               split='test')
+    test_images1 =  test_images                                                             
     test_images = test_images - IMAGENET_MEAN
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
     test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z)).batch(1)
@@ -338,10 +339,10 @@ def main():
 
     for i in range(test_feature_vector_caffe_pool5.shape[0]):
         for j in range(test_feature_vector_caffe_pool5.shape[1]):
-            Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_caffe_fc7[i,j]], mode='RGB').save("results/Caffe_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_vgg_pool5[i,j]], mode='RGB').save("results/VGG_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_vgg_fc7[i,j]], mode='RGB').save("results/VGG_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images1[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images1[test_feature_vector_caffe_fc7[i,j]], mode='RGB').save("results/Caffe_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images1[test_feature_vector_vgg_pool5[i,j]], mode='RGB').save("results/VGG_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images1[test_feature_vector_vgg_fc7[i,j]], mode='RGB').save("results/VGG_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
 
 
 if __name__ == '__main__':
