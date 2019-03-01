@@ -125,7 +125,7 @@ def main():
                                                               class_names=CLASS_NAMES,
                                                               split='test')
 
-    max_index = len(test_images.shape[0])
+    max_index = test_images.shape[0]
     indices = random.sample(range(0, max_index), 1000)
     test_images = test_images[indices]
     test_labels = test_labels[indices]
