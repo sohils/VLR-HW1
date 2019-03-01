@@ -178,3 +178,7 @@ def data_augmentation_crop(images, labels, weights, seed):
 def center_crop(images, labels, weights):
     images = tf.image.central_crop(images, (224/256))
     return (images, labels, weights)
+
+def center_crop(images):
+    images = tf.image.central_crop(images, (224/256))
+    return images
