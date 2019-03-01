@@ -327,7 +327,7 @@ def main():
         if(index == 10):
             print(len(test_feature_vector_caffe_pool5),test_feature_vector_caffe_pool5[0].shape)
 
-    print("After distance calculations, size:", test_feature_vector_caffe_pool5.shape)
+    print("After distance calculations, size:", len(test_feature_vector_caffe_pool5))
 
     test_feature_vector_caffe_pool5 = np.asarray(test_feature_vector_caffe_pool5).argsort(axis=0)[0:5,:]
     test_feature_vector_caffe_fc7 = np.asarray(test_feature_vector_caffe_fc7).argsort(axis=0)[0:5,:]
