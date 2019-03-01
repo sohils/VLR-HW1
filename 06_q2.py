@@ -311,9 +311,9 @@ def main():
     test_feature_vector_vgg_pool5=[]
     test_feature_vector_vgg_fc7=[]
 
-    print("Extracted ground images and vectors")
+    print("Extracted test images")
 
-    for index, (images, labels, weights) in enumerate(train_dataset):
+    for index, (images, labels, weights) in enumerate(test_dataset):
         feature_vector_caffe_pool5 = caffe_model.do_pool5(images).flatten()
         feature_vector_caffe_fc7 = caffe_model.do_fc7(images).flatten()
         feature_vector_vgg_pool5 = vgg_model.do_pool5(images).flatten()
@@ -324,8 +324,8 @@ def main():
         test_feature_vector_vgg_pool5.append(np.sum(np.square(ground_feature_vector_vgg_pool5 - feature_vector_vgg_pool5), axis=1))
         test_feature_vector_vgg_fc7.append(np.sum(np.square(ground_feature_vector_vgg_fc7 - feature_vector_vgg_fc7), axis=1))
 
-        if(index == 0):
-            print(test_feature_vector_caffe_pool5.shape)
+        if(index == 10):
+            print(len(test_feature_vector_caffe_pool5),test_feature_vector_caffe_pool5[0].shape)
 
     print("After distance calculations, size:", test_feature_vector_caffe_pool5.shape)
 
