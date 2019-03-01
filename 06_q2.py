@@ -318,7 +318,7 @@ def main():
         feature_vector_caffe_fc7 = caffe_model.do_fc7(images).numpy().flatten()
         feature_vector_vgg_pool5 = vgg_model.do_pool5(images).numpy().flatten()
         feature_vector_vgg_fc7 = vgg_model.do_fc7(images).numpy().flatten()
-
+        print("processing :"+ str(index))
         test_feature_vector_caffe_pool5.append(np.sum(np.square(ground_feature_vector_caffe_pool5 - feature_vector_caffe_pool5), axis=1))
         test_feature_vector_caffe_fc7.append(np.sum(np.square(ground_feature_vector_caffe_fc7 - feature_vector_caffe_fc7), axis=1))
         test_feature_vector_vgg_pool5.append(np.sum(np.square(ground_feature_vector_vgg_pool5 - feature_vector_vgg_pool5), axis=1))
@@ -329,10 +329,10 @@ def main():
 
     print("After distance calculations, size:", test_feature_vector_caffe_pool5.shape)
 
-    test_feature_vector_caffe_pool5 = np.asarray(test_feature_vector_caffe_pool5).argsort(axis=0)[0:4,:]
-    test_feature_vector_caffe_fc7 = np.asarray(test_feature_vector_caffe_fc7).argsort(axis=0)[0:4,:]
-    test_feature_vector_vgg_pool5 = np.asarray(test_feature_vector_vgg_pool5).argsort(axis=0)[0:4,:]
-    test_feature_vector_vgg_fc7 = np.asarray(test_feature_vector_vgg_fc7).argsort(axis=0)[0:4,:]
+    test_feature_vector_caffe_pool5 = np.asarray(test_feature_vector_caffe_pool5).argsort(axis=0)[0:5,:]
+    test_feature_vector_caffe_fc7 = np.asarray(test_feature_vector_caffe_fc7).argsort(axis=0)[0:5,:]
+    test_feature_vector_vgg_pool5 = np.asarray(test_feature_vector_vgg_pool5).argsort(axis=0)[0:5,:]
+    test_feature_vector_vgg_fc7 = np.asarray(test_feature_vector_vgg_fc7).argsort(axis=0)[0:5,:]
     
     print("Found min distance, size:", test_feature_vector_caffe_pool5.shape)
 
