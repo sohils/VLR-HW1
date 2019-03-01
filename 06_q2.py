@@ -339,10 +339,10 @@ def main():
     test_images = test_images + IMAGENET_MEAN
     for i in range(test_feature_vector_caffe_pool5.shape[0]):
         for j in range(test_feature_vector_caffe_pool5.shape[1]):
-            Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_caffe_fc7[i,j]], mode='RGB').save("results/Caffe_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_vgg_pool5[i,j]], mode='RGB').save("results/VGG_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_vgg_fc7[i,j]], mode='RGB').save("results/VGG_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]]).save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_caffe_fc7[i,j]]).save("results/Caffe_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_vgg_pool5[i,j]]).save("results/VGG_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_vgg_fc7[i,j]]).save("results/VGG_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
 
 
 if __name__ == '__main__':
