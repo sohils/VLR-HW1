@@ -335,6 +335,10 @@ def main():
     test_feature_vector_vgg_pool5 = np.asarray(test_feature_vector_vgg_pool5).argsort(axis=0)[0:5,:]
     test_feature_vector_vgg_fc7 = np.asarray(test_feature_vector_vgg_fc7).argsort(axis=0)[0:5,:]
     
+    np.savez("images_nearest.npz", caffe_pool5=test_feature_vector_caffe_pool5,
+    caffe_fc7=test_feature_vector_caffe_fc7, vgg_pool5=test_feature_vector_vgg_pool5,
+    vgg_fc7=test_feature_vector_vgg_fc7)
+
     print("Found min distance, size:", test_feature_vector_caffe_pool5.shape)
     test_images = test_images + IMAGENET_MEAN
     for i in range(test_feature_vector_caffe_pool5.shape[0]):
