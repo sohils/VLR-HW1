@@ -291,11 +291,13 @@ def main():
         ground_feature_vector_caffe_fc7.append(caffe_model.do_fc7(image).numpy().flatten())
         ground_feature_vector_vgg_pool5.append(vgg_model.do_pool5(image).numpy().flatten())
         ground_feature_vector_vgg_fc7.append(vgg_model.do_fc7(image).numpy().flatten())
-    
+
     ground_feature_vector_caffe_pool5 = np.asarray(ground_feature_vector_caffe_pool5)
     ground_feature_vector_caffe_fc7 = np.asarray(ground_feature_vector_caffe_fc7)
     ground_feature_vector_vgg_pool5 = np.asarray(ground_feature_vector_vgg_pool5)
     ground_feature_vector_vgg_fc7 = np.asarray(ground_feature_vector_vgg_fc7)
+
+    print("Extracted ground images and vectors")
 
     test_images, test_labels, test_weights = util.load_pascal(args.data_dir,
                                                               class_names=CLASS_NAMES,
@@ -309,6 +311,8 @@ def main():
     test_feature_vector_vgg_pool5=[]
     test_feature_vector_vgg_fc7=[]
 
+    print("Extracted ground images and vectors")
+
     for index, (images, labels, weights) in enumerate(train_dataset):
         feature_vector_caffe_pool5 = caffe_model.do_pool5(images).flatten()
         feature_vector_caffe_fc7 = caffe_model.do_fc7(images).flatten()
@@ -320,11 +324,18 @@ def main():
         test_feature_vector_vgg_pool5.append(np.sum(np.square(ground_feature_vector_vgg_pool5 - feature_vector_vgg_pool5), axis=1))
         test_feature_vector_vgg_fc7.append(np.sum(np.square(ground_feature_vector_vgg_fc7 - feature_vector_vgg_fc7), axis=1))
 
+        if(index == 0):
+            print(test_feature_vector_caffe_pool5.shape)
+
+    print("After distance calculations, size:", test_feature_vector_caffe_pool5.shape)
+
     test_feature_vector_caffe_pool5 = np.asarray(test_feature_vector_caffe_pool5).argsort(axis=0)[0:4,:]
     test_feature_vector_caffe_fc7 = np.asarray(test_feature_vector_caffe_fc7).argsort(axis=0)[0:4,:]
     test_feature_vector_vgg_pool5 = np.asarray(test_feature_vector_vgg_pool5).argsort(axis=0)[0:4,:]
     test_feature_vector_vgg_fc7 = np.asarray(test_feature_vector_vgg_fc7).argsort(axis=0)[0:4,:]
-
+    
+    print("Found min distance, size:", test_feature_vector_caffe_pool5.shape)
+    
     for i in range(test_feature_vector_caffe_pool5.shape[0]):
         for j in range(test_feature_vector_caffe_pool5.shape[1]):
             Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
