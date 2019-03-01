@@ -12,7 +12,6 @@ from tensorflow.contrib import eager as tfe
 from tensorflow.keras import layers
 
 import time
-import h5py
 
 import util
 import matplotlib.pyplot as plt
@@ -269,8 +268,8 @@ def main():
     vgg_model.build(input_shape=(1,224,224,3))
     caffe_model.build(input_shape=(1,224,224,3))
 
-    vgg_model.load_weights("checkpoints/20-05-weights.h5")
-    caffe_model.load_weights("checkpoints/0-03-weights.h5")
+    vgg_model.load_weights("checkpoints/2510-05-weights.h5")
+    caffe_model.load_weights("checkpoints/30-03-weights.h5")
 
     ground_image_names = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'motorbike',
                'pottedplant', 'sheep', 'sofa', 'tvmonitor']
@@ -328,10 +327,10 @@ def main():
 
     for i in range(test_feature_vector_caffe_pool5.shape[0]):
         for j in range(test_feature_vector_caffe_pool5.shape[1]):
-            Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_caffe_fc7[i,j]], mode='RGB').save("Caffe_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_vgg_pool5[i,j]], mode='RGB').save("VGG_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
-            Image.fromarray(test_images[test_feature_vector_vgg_fc7[i,j]], mode='RGB').save("VGG_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_caffe_fc7[i,j]], mode='RGB').save("results/Caffe_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_vgg_pool5[i,j]], mode='RGB').save("results/VGG_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
+            Image.fromarray(test_images[test_feature_vector_vgg_fc7[i,j]], mode='RGB').save("results/VGG_FC7_"+str(j)+"_"+str(i)+"_nearest.png")
 
 
 if __name__ == '__main__':
