@@ -143,6 +143,7 @@ def main():
     feature_vector_caffe_fc7=np.asarray(feature_vector_caffe_fc7)
 
     caffe_fc7_tsne_projection = TSNE(n_components=2).fit_transform(feature_vector_caffe_fc7)
+    print(caffe_fc7_tsne_projection.shape)
     np.savez("tsne.npz", projections=caffe_fc7_tsne_projection, labels=test_labels)
     # plt.scatter(caffe_fc7_tsne_projection[:,0], caffe_fc7_tsne_projection[:,1])
 
