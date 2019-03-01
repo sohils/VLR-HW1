@@ -281,7 +281,7 @@ def main():
 
     ground_images = ground_images - IMAGENET_MEAN
     ground_dataset = tf.data.Dataset.from_tensor_slices((ground_images))
-    ground_dataset = ground_dataset.map(lambda x: util.center_crop(x)).batch(1)
+    ground_dataset = ground_dataset.map(lambda x: util.center_crop_2(x)).batch(1)
     ground_feature_vector_caffe_pool5=[]
     ground_feature_vector_caffe_fc7=[]
     ground_feature_vector_vgg_pool5=[]
@@ -304,7 +304,7 @@ def main():
                                                               split='test')
     test_images = test_images - IMAGENET_MEAN
     test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels, test_weights))
-    test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z))
+    test_dataset = test_dataset.map(lambda x,y,z: util.center_crop(x,y,z)).batch(1)
 
     test_feature_vector_caffe_pool5=[]
     test_feature_vector_caffe_fc7=[]
@@ -335,7 +335,7 @@ def main():
     test_feature_vector_vgg_fc7 = np.asarray(test_feature_vector_vgg_fc7).argsort(axis=0)[0:4,:]
     
     print("Found min distance, size:", test_feature_vector_caffe_pool5.shape)
-    
+
     for i in range(test_feature_vector_caffe_pool5.shape[0]):
         for j in range(test_feature_vector_caffe_pool5.shape[1]):
             Image.fromarray(test_images[test_feature_vector_caffe_pool5[i,j]], mode='RGB').save("results/Caffe_Pool5_"+str(j)+"_"+str(i)+"_nearest.png")
