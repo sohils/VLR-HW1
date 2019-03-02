@@ -219,7 +219,7 @@ def main():
                                                               split='test')
 
     train_length = train_images.shape[0]
-    random_list_range = np.range(train_length)
+    random_list_range = np.arange(train_length)
     random.shuffle(random_list_range)
 
 
