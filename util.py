@@ -202,3 +202,31 @@ def center_crop(images, labels, weights):
 def center_crop_2(images):
     images = tf.image.central_crop(images, (224/256))
     return images
+
+
+def data_augmentation_mixup(dataset, seed):
+    dataset = dataset.map(lambda x,y,z,p,q,r: data_augmentation_flip_left_right_mixup(x,y,z,p,q,r,seed))
+    # dataset = dataset.concatenate(dataset.map(lambda x,y,z: data_augmentation_flip_up_down(x,y,z,seed)))
+    dataset = dataset.map(lambda x,y,z,p,q,r: data_augmentation_crop_mixup(x,y,z,p,q,r,seed))
+    return dataset
+
+def data_augmentation_flip_left_right_mixup(images, labels, weights, images_2, labels_2, weights_2, seed):
+    images = tf.image.random_flip_left_right(images,seed=seed)
+    images_2 = tf.image.random_flip_left_right(images_2,seed=seed)
+    return (images, labels, weights, images_2, labels_2, weights_2)
+
+def data_augmentation_flip_up_down_mixup(images, labels, weights, images_2, labels_2, weights_2, seed):
+    images = tf.image.random_flip_up_down(images,seed=seed)
+    images_2 = tf.image.random_flip_up_down(images_2,seed=seed)
+    return (images, labels, weights, images_2, labels_2, weights_2)
+
+def data_augmentation_crop_mixup(images, labels, weights, images_2, labels_2, weights_2, seed):
+    images = tf.image.random_crop(images, size = [224,224,3], seed = seed)
+    images_2 = tf.image.random_crop(images_2, size = [224,224,3], seed = seed)
+    # images = tf.image.resize_images(images, size = [224,224])
+    return (images, labels, weights, images_2, labels_2, weights_2)
+
+def center_crop_mixup(images, labels, weights, images_2, labels_2, weights_2):
+    images = tf.image.central_crop(images, (224/256))
+    images_2 = tf.image.central_crop(images_2, (224/256))
+    return (images, labels, weights, images_2, labels_2, weights_2)
