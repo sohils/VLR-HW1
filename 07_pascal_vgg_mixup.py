@@ -277,7 +277,7 @@ def main():
                                               targets_1=labels,
                                               targets_2=labels_2,
                                               lam=lam,
-                                              weights=weights,
+                                              weights_1=weights,
                                               weights_2=weights_2)
             optimizer.apply_gradients(zip(grads,
                                           model.trainable_variables),
