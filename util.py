@@ -93,6 +93,26 @@ def cal_grad(model, loss_func, inputs, targets, weights=1.0):
         loss_value = loss_func(targets, logits, weights)
     return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
+def cal_grad_mixup(model, loss_func, inputs, targets_1, targets_2, lam, weights_1=1.0, weights_2=1.0):
+    """
+    Return the loss value and gradients
+    Args:
+         model (keras.Model): model
+         loss_func: loss function to use
+         inputs: image inputs
+         targets: labels
+         weights: weights of the samples
+    Returns:
+         loss and gradients
+    """
+
+    with tf.GradientTape() as tape:
+        logits = model(inputs, training=True)
+        loss_value_1 = loss_func(targets_1, logits, weights_1)
+        loss_value_2 = loss_func(targets_2, logits, weights_2)
+        loss_value = lam*loss_value_1 + (1-lam)*loss_value_2
+    return loss_value, tape.gradient(loss_value, model.trainable_variables)
+
 
 def compute_ap(gt, pred, valid, average=None):
     """
